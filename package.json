@@ -1,0 +1,22 @@
+{
+  "name": "mysql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "Dependencies": {
+    "express": "4.21.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "express": "^4.21.1",
+    "mysql2": "^3.11.5",
+    "pg-promise": "^11.10.2"
+  }
+}

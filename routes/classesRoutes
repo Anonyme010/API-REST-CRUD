@@ -1,0 +1,15 @@
+const express = require('express');
+const { getClasses, createClass, updateClass, deleteClass } = require('../controllers/classesController');
+
+const router = express.Router();
+
+const classesController = require('../controllers/classesController');
+
+router.get('/classes', getClasses);
+router.post('/classes', createClass);
+router.put('/classes/:id', updateClass);
+router.delete('/classes/:id', deleteClass);
+router.get('/classes/:id/details', classesController.getClassDetails);
+
+
+module.exports = router;

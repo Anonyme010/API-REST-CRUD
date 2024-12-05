@@ -1,0 +1,11 @@
+const express = require('express');
+const { getEnseignants, createEnseignant, updateEnseignant, deleteEnseignant } = require('../controllers/enseignantsController');
+
+const router = express.Router();
+
+router.get('/enseignants', getEnseignants);
+router.post('/enseignants', createEnseignant);
+router.put('/enseignants/:id', updateEnseignant);
+router.delete('/enseignants/:id', deleteEnseignant);
+
+module.exports = router;

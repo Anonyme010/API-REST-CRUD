@@ -1,0 +1,132 @@
+const { getConnection } = require('../entities/classes');
+
+// Récupérer toutes les classes
+async function getClasses(req, res) {
+  try {
+    const connection = await getConnection();
+    const [rows] = await connection.execute('SELECT * FROM classes');
+    res.status(200).json(rows);
+    await connection.end();
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des classes' });
+  }
+}
+
+// Ajouter une nouvelle classe
+async function createClass(req, res) {
+  const { nom, niveau, enseignant_principal_id } = req.body;
+
+  if (!nom || !niveau || !enseignant_principal_id) {
+    return res.status(400).json({ error: 'Tous les champs sont requis' });
+  }
+
+  try {
+    const connection = await getConnection();
+    const [result] = await connection.execute(
+      'INSERT INTO classes (nom, niveau, enseignant_principal_id) VALUES (?, ?, ?)',
+      [nom, niveau, enseignant_principal_id]
+    );
+    res.status(201).json({ message: 'Classe ajoutée avec succès' });
+    await connection.end();
+  } catch (err) {
+    console.error('Erreur lors de l\'ajout de la classe:', err.message);
+    res.status(500).json({ error: 'Erreur lors de l\'ajout de la classe' });
+  }
+}
+
+// Mettre à jour une classe
+async function updateClass(req, res) {
+    const { id } = req.params;
+    const { nom, niveau, enseignant_principal_id } = req.body;
+  
+    try {
+      const connection = await getConnection();
+  
+      // Vérifier si la classe existe dans la base de données
+      const [rows] = await connection.execute(
+        'SELECT * FROM classes WHERE id = ?',
+        [id]
+      );
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Classe introuvable' });
+      }
+  
+      // Mettre à jour la classe
+      await connection.execute(
+        'UPDATE classes SET nom = ?, niveau = ?, enseignant_principal_id = ? WHERE id = ?',
+        [nom, niveau, enseignant_principal_id, id]
+      );
+  
+      res.status(200).json({ message: 'Classe mise à jour avec succès' });
+  
+      await connection.end();
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur lors de la mise à jour de la classe' });
+    }
+  }
+  
+
+// Supprimer une classe
+async function deleteClass(req, res) {
+    const { id } = req.params;
+  
+    try {
+      const connection = await getConnection();
+      
+      // Vérifier si la classe existe
+      const [rows] = await connection.execute('SELECT * FROM classes WHERE id = ?', [id]);
+      
+      if (rows.length === 0) {
+        // Si la classe n'existe pas, renvoie un message d'erreur
+        return res.status(404).json({ error: 'Classe introuvable' });
+      }
+  
+      // Supprimer la classe si elle existe
+      await connection.execute('DELETE FROM classes WHERE id = ?', [id]);
+      res.status(200).json({ message: 'Classe supprimée avec succès' });
+      await connection.end();
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur lors de la suppression de la classe' });
+    }
+  }
+  
+
+  // Fonction pour obtenir les détails d'une classe, y compris l'enseignant principal, les étudiants et le nombre d'étudiants
+async function getClassDetails(req, res) {
+    const { id } = req.params;
+  
+    try {
+      const connection = await getConnection();
+      
+      // Effectuer une jointure entre les classes, enseignants et étudiants, et compter le nombre d'étudiants
+      const [rows] = await connection.execute(
+        `SELECT c.nom AS classe_nom, c.niveau, 
+                e.nom AS enseignant_nom, e.prenom AS enseignant_prenom, 
+                GROUP_CONCAT(s.nom ORDER BY s.nom) AS etudiants,
+                COUNT(s.id) AS nombre_etudiants
+         FROM classes c
+         LEFT JOIN enseignants e ON c.enseignant_principal_id = e.id
+         LEFT JOIN etudiants s ON s.classe_id = c.id
+         WHERE c.id = ?
+         GROUP BY c.id`,
+        [id]
+      );
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Classe non trouvée' });
+      }
+  
+      // Ajout du nombre d'étudiants dans les résultats
+      const classeDetails = rows[0];
+      classeDetails.nombre_etudiants = parseInt(classeDetails.nombre_etudiants); // Conversion du nombre d'étudiants en entier
+      
+      res.status(200).json(classeDetails);
+      await connection.end();
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur lors de la récupération des détails de la classe' });
+    }
+  }
+  
+
+module.exports = { getClasses, createClass, updateClass, deleteClass ,   getClassDetails,};

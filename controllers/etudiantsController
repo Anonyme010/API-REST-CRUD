@@ -1,0 +1,104 @@
+const { getConnection } = require('../entities/etudiants');
+
+// Récupérer tous les étudiants
+async function getEtudiants(req, res) {
+  try {
+    const connection = await getConnection();
+    const [rows] = await connection.execute('SELECT * FROM etudiants');
+    res.status(200).json(rows);
+    await connection.end();
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des étudiants' });
+  }
+}
+
+// Ajouter un nouvel étudiant
+async function createEtudiant(req, res) {
+  const { nom, prenom, age, email, classe_id } = req.body;
+
+  if (!nom || !prenom || !age || !email || !classe_id) {
+    return res.status(400).json({ error: 'Tous les champs sont requis' });
+  }
+
+  try {
+    const connection = await getConnection();
+    const [result] = await connection.execute(
+      'INSERT INTO etudiants (nom, prenom, age, email, classe_id) VALUES (?, ?, ?, ?, ?)',
+      [nom, prenom, age, email, classe_id]
+    );
+    res.status(201).json({ message: 'Étudiant ajouté avec succès' });
+    await connection.end();
+  } catch (err) {
+    console.error('Erreur lors de l\'ajout de l\'étudiant:', err.message);
+    res.status(500).json({ error: 'Erreur lors de l\'ajout de l\'étudiant' });
+  }
+}
+
+// Mettre à jour un étudiant
+async function updateEtudiant(req, res) {
+    const { id } = req.params;
+    const { nom, prenom, classe_id } = req.body;
+  
+    try {
+      const connection = await getConnection();
+  
+      // Vérifier si l'étudiant existe dans la base de données
+      const [rows] = await connection.execute(
+        'SELECT * FROM etudiants WHERE id = ?',
+        [id]
+      );
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Étudiant introuvable' });
+      }
+  
+      // Mettre à jour l'étudiant
+      await connection.execute(
+        'UPDATE etudiants SET nom = ?, prenom = ?, classe_id = ? WHERE id = ?',
+        [nom, prenom, classe_id, id]
+      );
+  
+      res.status(200).json({ message: 'Étudiant mis à jour avec succès' });
+  
+      await connection.end();
+    } catch (err) {
+      res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'étudiant' });
+    }
+  }
+  
+
+// Supprimer un étudiant
+async function deleteEtudiant(req, res) {
+  const { id } = req.params;
+
+  try {
+    const connection = await getConnection();
+
+    // Vérifier si l'étudiant existe dans la base de données
+    const [rows] = await connection.execute(
+      'SELECT * FROM etudiants WHERE id = ?',
+      [id]
+    );
+
+    // Si l'étudiant n'existe pas, renvoyer un message d'erreur
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Étudiant introuvable' });
+    }
+
+    // Si l'étudiant existe, procéder à la suppression
+    await connection.execute(
+      'DELETE FROM etudiants WHERE id = ?',
+      [id]
+    );
+
+    // Renvoyer une réponse de succès
+    res.status(200).json({ message: 'Étudiant supprimé avec succès' });
+
+    await connection.end();
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la suppression de l\'étudiant' });
+  }
+}
+
+
+module.exports = { getEtudiants, createEtudiant, updateEtudiant, deleteEtudiant };
